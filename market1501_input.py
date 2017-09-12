@@ -1,6 +1,7 @@
 import tensorflow as tf
 from PIL import Image
 import os
+slim = tf.contrib.slim
 
 
 SPLITS_TO_SIZES = {'train': 12936, 'query':3800, 'test': 10000}

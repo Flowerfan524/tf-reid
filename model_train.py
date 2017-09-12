@@ -105,7 +105,7 @@ def _get_init_fn():
             ignore_missing_vars=FLAGS.ignore_missing_vars)
 
 
-def main():
+def main(_):
 
 
     dataset=make_slim_dataset(FLAGS.dataset_split_name, FLAGS.dataset_dir)
@@ -177,7 +177,7 @@ def main():
             train_op,
             logdir=FLAGS.train_dir,
             number_of_steps=FLAGS.max_number_of_steps,
-            log_every_n_steps=FLAGS.log_every_n_steps
+            log_every_n_steps=FLAGS.log_every_n_steps,
             init_fn=_get_init_fn()
         )
 
