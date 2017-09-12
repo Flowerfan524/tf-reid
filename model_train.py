@@ -1,6 +1,7 @@
 import tensorflow as tf
 from market1501_input import make_slim_dataset
 from preprocessing import preprocessing_factory
+from nets import nets_factory
 
 
 slim = tf.contrib.slim
@@ -117,7 +118,7 @@ def main(_):
         ################
         # select network
         ################
-        network_fn = slim.nets.nets_factory.get_network_fn(
+        network_fn = nets_factory.get_network_fn(
             FLAGS.model_name,
             num_classes=(dataset.num_classes - FLAGS.labels_offset),
             weight_decay=FLAGS.weight_decay,
