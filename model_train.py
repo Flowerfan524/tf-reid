@@ -20,6 +20,12 @@ tf.app.flags.DEFINE_string(
 tf.app.flags.DEFINE_string(
     'dataset_dir', '/tmp/Market-1501/', 'The directory where the dataset files are stored.')
 
+
+tf.app.flags.DEFINE_integer(
+    'num_readers', 4,
+    'The number of parallel readers that read data from the dataset.')
+
+
 tf.app.flags.DEFINE_integer(
     'labels_offset', 0,
     'An offset for the labels in the dataset. This flag is primarily used to '
