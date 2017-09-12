@@ -51,6 +51,15 @@ tf.app.flags.DEFINE_string(
     'The path to a checkpoint from which to fine-tune.')
 
 
+
+######################
+# Optimization Flags #
+######################
+
+tf.app.flags.DEFINE_float(
+    'weight_decay', 0.00004, 'The weight decay on the model weights.')
+
+
 FLAGS = tf.app.flags.FLAGS
 
 
