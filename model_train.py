@@ -1,5 +1,6 @@
 import tensorflow as tf
 from market1501_input import make_slim_dataset
+from preprocessing import preprocessing_factory
 
 
 slim = tf.contrib.slim
@@ -10,13 +11,13 @@ tf.app.flags.DEFINE_string(
 
 
 tf.app.flags.DEFINE_string(
-    'dataset_name', 'imagenet', 'The name of the dataset to load.')
+    'dataset_name', 'market-1501_', 'The name of the dataset to load.')
 
 tf.app.flags.DEFINE_string(
     'dataset_split_name', 'train', 'The name of the train/test split.')
 
 tf.app.flags.DEFINE_string(
-    'dataset_dir', None, 'The directory where the dataset files are stored.')
+    'dataset_dir', '/tmp/Market-1501/', 'The directory where the dataset files are stored.')
 
 tf.app.flags.DEFINE_integer(
     'labels_offset', 0,
@@ -35,13 +36,13 @@ tf.app.flags.DEFINE_integer(
     'batch_size', 32, 'The number of samples in each batch.')
 
 tf.app.flags.DEFINE_integer(
-    'train_image_size', None, 'Train image size')
+    'train_image_size', 12936, 'Train image size')
 
 tf.app.flags.DEFINE_integer('max_number_of_steps', None,
                             'The maximum number of training steps.')
 
 tf.app.flags.DEFINE_string(
-    'checkpoint_path', None,
+    'checkpoint_path', '/tmp/checkpoints/inception_v3.ckpt',
     'The path to a checkpoint from which to fine-tune.')
 
 
@@ -50,7 +51,7 @@ FLAGS = tf.app.flags.FLAGS
 def main():
 
 
-    dataset=make_slim_dataset(split_name, data_dir)
+    dataset=make_slim_dataset(FLAGS.dataset_split_name, FLAGS.dataset_dir)
 
 
     with tf.Graph().as_default():
@@ -69,8 +70,8 @@ def main():
         ###############################
         # select preprocessing function
         ###############################
-        preprocessing_name = FLAGS.preprocessing_name
-        image_preprocessing_fn = slim.preprocessing.preprocessing_factory.get_preprocessing(
+        preprocessing_name = FLAGS.preprocessing_name or FLAGS.model_name
+        image_preprocessing_fn = preprocessing_factory.get_preprocessing(
             preprocessing_name,
             is_training=True
         )
@@ -106,13 +107,19 @@ def main():
 
         train_op = slim.learning.create_train_op(total_loss,optimizer)
 
+        variables_to_restore = slim.get_model_variables()
+
+        init_fn = slim.assign_from_checkpoint_fn(FLAGS.checkpoint_path, variables_to_restore)
+
+
         slim.learning.train(
             train_op,
             logdir=FLAGS.train_dir,
             number_of_steps=FLAGS.max_number_of_steps,
             log_every_n_steps=FLAGS.log_every_n_steps
+            init_fn=init_fn
         )
-        
+
         with slim.arg_scope():
             logits, endpoints = slim.nets.inception()
 
