@@ -1,6 +1,7 @@
 import tensorflow as tf
 from PIL import Image
 import os
+slim = tf.contrib.slim
 
 
 SPLITS_TO_SIZES = {'train': 12936, 'query':3800, 'test': 10000}
@@ -8,7 +9,7 @@ SPLITS_TO_SIZES = {'train': 12936, 'query':3800, 'test': 10000}
 _NUM_CLASSES = 751
 
 _ITEMS_TO_DESCRIPTIONS = {
-    'image': 'A [32 x 32 x 3] color image.',
+    'image': 'A [128 x 64 x 3] color image.',
     'label': 'A single integer between 0 and 9',
 }
 

@@ -124,11 +124,11 @@ def _get_init_fn():
 def main(_):
 
 
-    dataset=make_slim_dataset(FLAGS.dataset_split_name, FLAGS.dataset_dir)
 
 
     with tf.Graph().as_default():
         # data set
+        dataset=make_slim_dataset(FLAGS.dataset_split_name, FLAGS.dataset_dir)
 
         ################
         # select network
@@ -176,10 +176,10 @@ def main(_):
         if 'AuxLogits' in end_points:
             tf.losses.softmax_cross_entropy(
                 logits=end_points['AuxLogits'], onehot_labels=labels,
-                label_smoothing=FLAGS.label_smoothing, weights=0.4, scope='aux_loss')
+                label_smoothing=0, weights=0.4, scope='aux_loss')
         tf.losses.softmax_cross_entropy(
             logits=logits, onehot_labels=labels,
-            label_smoothing=FLAGS.label_smoothing, weights=1.0)
+            label_smoothing=0, weights=1.0)
 
         total_loss = slim.losses.get_total_loss()
 
@@ -197,8 +197,6 @@ def main(_):
             init_fn=_get_init_fn()
         )
 
-        with slim.arg_scope():
-            logits, endpoints = slim.nets.inception()
 
 
 
