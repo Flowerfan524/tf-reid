@@ -1,7 +1,6 @@
 import tensorflow as tf
 from PIL import Image
 import os
-slim = tf.contrib.slim
 
 
 SPLITS_TO_SIZES = {'train': 12936, 'query':3800, 'test': 10000}
@@ -74,22 +73,23 @@ def _conver_to_records(data_dir,tfrecord_writer):
 
 
 def make_slim_dataset(split_name,data_dir):
-    reader = tf.TFRecordReader()
+    reader = tf.TFRecordReader
     keys_to_features = {
       'img_raw': tf.FixedLenFeature((), tf.string, default_value=''),
-      'img_fmt': tf.FixedLenFeature((), tf.string, default_value='png'),
+      'img_fmt': tf.FixedLenFeature((), tf.string, default_value='raw'),
       'label': tf.FixedLenFeature(
           [], tf.int64, default_value=tf.zeros([], dtype=tf.int64)),
   }
     items_to_handlers = {
-    'image': slim.tfexample_decoder.Image(shape=[32, 32, 3]),
-    'label': slim.tfexample_decoder.Tensor('image/class/label'),
+    'image': slim.tfexample_decoder.Image(image_key='img_raw',format_key='img_fmt',shape=[128, 64, 3]),
+    'label': slim.tfexample_decoder.Tensor('label'),
     }
 
     decoder = slim.tfexample_decoder.TFExampleDecoder(
     keys_to_features, items_to_handlers)
 
-    file_pattern = os.path.join(data_dir,'market-1501_{}.tfrecord'.format(split_name))
+    file_pattern = os.path.join(data_dir,
+                'market-1501_{}.tfrecord'.format(split_name))
 
     return slim.dataset.Dataset(
     data_sources=file_pattern,
@@ -104,19 +104,19 @@ def make_slim_dataset(split_name,data_dir):
 
 
 def main(_):
-    train_dir = '/tmp/Market-1501/train/'
-    query_dir = '/tmp/Market-1501/query/'
-    test_dir = '/tmp/Market-1501/test/'
+    train_dir = '/tmp/market-1501/train/'
+    query_dir = '/tmp/market-1501/query/'
+    test_dir = '/tmp/market-1501/test/'
 
-    training_filename = '{}/market-1501_{}.tfrecord'.format('/tmp/Market-1501','train')
+    training_filename = '{}/market-1501_{}.tfrecord'.format('/tmp/market-1501/','train')
     with tf.python_io.TFRecordWriter(training_filename) as tfrecord_writer:
         _conver_to_records(train_dir, tfrecord_writer)
 
-    quering_filename = '{}/market-1501_{}.tfrecord'.format('/tmp/Market-1501','query')
+    quering_filename = '{}/market-1501_{}.tfrecord'.format('/tmp/market-1501/','query')
     with tf.python_io.TFRecordWriter(quering_filename) as tfrecord_writer:
         _conver_to_records(query_dir, tfrecord_writer)
 
-    testing_filename = '{}/market-1501_{}.tfrecord'.format('/tmp/Market-1501','test')
+    testing_filename = '{}/market-1501_{}.tfrecord'.format('/tmp/market-1501/','test')
     with tf.python_io.TFRecordWriter(testing_filename) as tfrecord_writer:
         _conver_to_records(test_dir, tfrecord_writer)
 
