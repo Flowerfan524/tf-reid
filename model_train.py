@@ -56,7 +56,10 @@ tf.app.flags.DEFINE_string(
     'checkpoint_path', '/tmp/checkpoints/inception_v3.ckpt',
     'The path to a checkpoint from which to fine-tune.')
 
-
+tf.app.flags.DEFINE_string(
+    'checkpoint_exclude_scopes', None,
+    'Comma-separated list of scopes of variables to exclude when restoring '
+    'from a checkpoint.')
 
 ######################
 # Optimization Flags #
@@ -86,12 +89,6 @@ def _get_init_fn():
 
     # Warn the user if a checkpoint exists in the train_dir. Then we'll be
     # ignoring the checkpoint anyway.
-    if tf.train.latest_checkpoint(FLAGS.train_dir):
-        tf.logging.info(
-        'Ignoring --checkpoint_path because a checkpoint already exists in %s'
-        % FLAGS.train_dir)
-        return None
-
     exclusions = []
     if FLAGS.checkpoint_exclude_scopes:
         exclusions = [scope.strip()
@@ -122,7 +119,6 @@ def _get_init_fn():
 
 
 def main(_):
-
 
 
 
