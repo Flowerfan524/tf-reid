@@ -100,7 +100,38 @@ def make_slim_dataset(split_name,data_dir):
     items_to_descriptions=_ITEMS_TO_DESCRIPTIONS,
     num_classes=_NUM_CLASSES)
 
+def input_fn(filename,is_training=False):
+    dataset = tf.contrib.data.TFRecordDataset([filename])
 
+    # Use `tf.parse_single_example()` to extract data from a `tf.Example`
+    # protocol buffer, and perform any additional per-record preprocessing.
+    def parser(record):
+        keys_to_features = {
+            "img_raw": tf.FixedLenFeature((), tf.string, default_value=""),
+            "label": tf.FixedLenFeature((), tf.int64,
+                                        default_value=tf.zeros([], dtype=tf.int64)),
+            }
+        parsed = tf.parse_single_example(record, keys_to_features)
+
+        # Perform additional preprocessing on the parsed data.
+        image = tf.decode_raw(parsed["image_data"])
+        image = tf.reshape(image, [128, 64, 3])
+        label = tf.cast(parsed["label"], tf.int32)
+
+        return image, label
+
+    # Use `Dataset.map()` to build a pair of a feature dictionary and a label
+    # tensor for each example.
+    dataset = dataset.map(parser)
+    dataset = dataset.batch(32)
+    if is_training:
+        dataset = dataset.shuffle(buffer_size=10000)
+    iterator = dataset.make_one_shot_iterator()
+
+    # `features` is a dictionary in which each value is a batch of values for
+    # that feature; `labels` is a batch of labels.
+    imgs, labels = iterator.get_next()
+    return imgs, labels
 
 
 

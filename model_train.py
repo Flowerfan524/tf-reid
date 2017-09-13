@@ -1,5 +1,5 @@
 import tensorflow as tf
-from market1501_input import make_slim_dataset
+from market1501_input import make_slim_dataset,input_fn
 from preprocessing import preprocessing_factory
 from nets import nets_factory
 
@@ -56,10 +56,7 @@ tf.app.flags.DEFINE_string(
     'checkpoint_path', '/tmp/checkpoints/inception_v3.ckpt',
     'The path to a checkpoint from which to fine-tune.')
 
-tf.app.flags.DEFINE_string(
-    'checkpoint_exclude_scopes', None,
-    'Comma-separated list of scopes of variables to exclude when restoring '
-    'from a checkpoint.')
+
 
 ######################
 # Optimization Flags #
@@ -89,11 +86,18 @@ def _get_init_fn():
 
     # Warn the user if a checkpoint exists in the train_dir. Then we'll be
     # ignoring the checkpoint anyway.
+    if tf.train.latest_checkpoint(FLAGS.train_dir):
+        tf.logging.info(
+        'Ignoring --checkpoint_path because a checkpoint already exists in %s'
+        % FLAGS.train_dir)
+        return None
+
     exclusions = []
     if FLAGS.checkpoint_exclude_scopes:
         exclusions = [scope.strip()
             for scope in FLAGS.checkpoint_exclude_scopes.split(',')]
 
+    # TODO(sguada) variables.filter_variables()
     variables_to_restore = []
     for var in slim.get_model_variables():
         excluded = False
@@ -104,22 +108,33 @@ def _get_init_fn():
         if not excluded:
             variables_to_restore.append(var)
 
-    checkpoint_path = FLAGS.checkpoint_path
+    if tf.gfile.IsDirectory(FLAGS.checkpoint_path):
+        checkpoint_path = tf.train.latest_checkpoint(FLAGS.checkpoint_path)
+    else:
+        checkpoint_path = FLAGS.checkpoint_path
 
     tf.logging.info('Fine-tuning from %s' % checkpoint_path)
 
     return slim.assign_from_checkpoint_fn(
             checkpoint_path,
-            variables_to_restore)
+            variables_to_restore,
+            ignore_missing_vars=FLAGS.ignore_missing_vars)
 
 
 def main(_):
 
 
 
+
     with tf.Graph().as_default():
+        #############
         # data set
-        dataset=make_slim_dataset(FLAGS.dataset_split_name, FLAGS.dataset_dir)
+        ############
+        record_file = os.path.join(
+            FLAGS.dataset_dir,FLAGS.dataset_name,
+            '%s.tfrecord'%FLAGS.dataset_split_name)
+        image,label = input_fn(record_file,is_training=True)
+        #dataset=make_slim_dataset(FLAGS.dataset_split_name, FLAGS.dataset_dir)
 
         ################
         # select network
@@ -139,15 +154,6 @@ def main(_):
             preprocessing_name,
             is_training=True
         )
-
-        provider = slim.dataset_data_provider.DatasetDataProvider(
-            dataset,
-            num_readers=FLAGS.num_readers,
-            common_queue_capacity=20 * FLAGS.batch_size,
-            common_queue_min=10 * FLAGS.batch_size
-        )
-        [image, label] = provider.get(['image', 'label'])
-        label -= FLAGS.labels_offset
 
         train_image_size = network_fn.default_image_size
 
