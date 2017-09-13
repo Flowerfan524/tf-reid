@@ -94,7 +94,6 @@ def _get_init_fn():
         exclusions = [scope.strip()
             for scope in FLAGS.checkpoint_exclude_scopes.split(',')]
 
-    # TODO(sguada) variables.filter_variables()
     variables_to_restore = []
     for var in slim.get_model_variables():
         excluded = False
@@ -105,17 +104,13 @@ def _get_init_fn():
         if not excluded:
             variables_to_restore.append(var)
 
-    if tf.gfile.IsDirectory(FLAGS.checkpoint_path):
-        checkpoint_path = tf.train.latest_checkpoint(FLAGS.checkpoint_path)
-    else:
-        checkpoint_path = FLAGS.checkpoint_path
+    checkpoint_path = FLAGS.checkpoint_path
 
     tf.logging.info('Fine-tuning from %s' % checkpoint_path)
 
     return slim.assign_from_checkpoint_fn(
             checkpoint_path,
-            variables_to_restore,
-            ignore_missing_vars=FLAGS.ignore_missing_vars)
+            variables_to_restore)
 
 
 def main(_):
