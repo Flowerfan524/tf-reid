@@ -1,5 +1,5 @@
 import tensorflow as tf
-
+from market1501_input import input_fn
 
 feature_map = {
                 'vgg_16': 'fc7_end_points',
