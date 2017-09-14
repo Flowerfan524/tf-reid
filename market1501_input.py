@@ -4,6 +4,7 @@ import os
 slim = tf.contrib.slim
 
 
+
 SPLITS_TO_SIZES = {'train': 12936, 'query':3800, 'test': 10000}
 
 _NUM_CLASSES = 751
@@ -12,6 +13,8 @@ _ITEMS_TO_DESCRIPTIONS = {
     'image': 'A [128 x 64 x 3] color image.',
     'label': 'A single integer between 0 and 9',
 }
+
+label_dict = {}
 
 
 def int64_feature(values):
@@ -42,7 +45,6 @@ def bytes_feature(values):
 
 def _conver_to_records(data_dir,tfrecord_writer):
 
-    label_dict = {}
     value = 0
     filenames = os.listdir(data_dir)
     for filename in filenames:

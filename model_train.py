@@ -2,6 +2,7 @@ import tensorflow as tf
 from market1501_input import make_slim_dataset,input_fn
 from preprocessing import preprocessing_factory
 from nets import nets_factory
+import os
 
 
 slim = tf.contrib.slim
@@ -54,6 +55,10 @@ tf.app.flags.DEFINE_integer(
 
 tf.app.flags.DEFINE_string(
     'checkpoint_path', '/tmp/checkpoints/inception_v3.ckpt',
+    'The path to a checkpoint from which to fine-tune.')
+
+tf.app.flags.DEFINE_string(
+    'checkpoint_exclude_scopes', 'InceptionV3/Logits,InceptionV3/AuxLogits',
     'The path to a checkpoint from which to fine-tune.')
 
 
@@ -117,8 +122,7 @@ def _get_init_fn():
 
     return slim.assign_from_checkpoint_fn(
             checkpoint_path,
-            variables_to_restore,
-            ignore_missing_vars=FLAGS.ignore_missing_vars)
+            variables_to_restore)
 
 
 def main(_):
@@ -131,9 +135,8 @@ def main(_):
         # data set
         ############
         record_file = os.path.join(
-            FLAGS.dataset_dir,FLAGS.dataset_name,
-            '%s.tfrecord'%FLAGS.dataset_split_name)
-        image,label = input_fn(record_file,is_training=True)
+            FLAGS.dataset_dir,'%s%s.tfrecord'%(FLAGS.dataset_name,FLAGS.dataset_split_name))
+        image,label,_ = input_fn(record_file,is_training=True)
         #dataset=make_slim_dataset(FLAGS.dataset_split_name, FLAGS.dataset_dir)
 
         ################
@@ -141,7 +144,7 @@ def main(_):
         ################
         network_fn = nets_factory.get_network_fn(
             FLAGS.model_name,
-            num_classes=(dataset.num_classes - FLAGS.labels_offset),
+            num_classes=751,
             weight_decay=FLAGS.weight_decay,
             is_training=True
         )
@@ -165,7 +168,7 @@ def main(_):
             capacity=5 * FLAGS.batch_size
         )
         labels = slim.one_hot_encoding(
-          labels, dataset.num_classes - FLAGS.labels_offset)
+          labels, 751)
 
         logits, end_points = network_fn(images)
 
