@@ -6,6 +6,12 @@ import os
 import numpy as np
 slim = tf.contrib.slim
 
+tf.app.flags.DEFINE_string(
+        'split_name', 'query',
+        'The name of query/test split'
+        )
+FLAGS = tf.app.flags.FLAGS
+
 feature_map = {
                 'vgg_16': 'fc7_end_points',
                 'inception_v3':'PreLogits',
@@ -60,7 +66,7 @@ def extract_features(model_name,record_file,checkpoints):
         return features,classes,cameras
 
 def main(_):
-    split_name = 'query'
+    split_name = FLAGS.split_name
     model_name='inception_v3'
     record_file='/tmp/Market-1501/market-1501_%s.tfrecord'%split_name
     checkpoints='/tmp/Market-1501'
