@@ -55,16 +55,17 @@ def extract_features(model_name,record_file,checkpoints):
         #    coord.request_stop()
         #    coord.join(threads)
         features = np.reshape(features,[-1,feature.shape[-1]])
-        classes = np.reshape(cameras,[-1,1])
+        classes = np.reshape(classes,[-1,1])
         cameras = np.reshape(cameras,[-1,1])
         return features,classes,cameras
 
 def main(_):
+    split_name = 'query'
     model_name='inception_v3'
-    record_file='/tmp/Market-1501/market-1501_test.tfrecord'
+    record_file='/tmp/Market-1501/market-1501_%s.tfrecord'%split_name
     checkpoints='/tmp/Market-1501'
     feature,label,cam = extract_features(model_name, record_file, checkpoints)
-    np.savez('/tmp/Market-1501/feature/test',
+    np.savez('/tmp/Market-1501/feature/%s'%split_name,
             feature=feature,
             label=label,
             cam=cam)
