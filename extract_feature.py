@@ -34,13 +34,13 @@ def extract_features(model_name,record_file,checkpoints):
                     features += [np_feature]
                 except tf.errors.OutOfRangeError:
                     break
-        features = np.reshape(features,[-1,feature.shape[-1])
+        features = np.reshape(features,[-1,feature.shape[-1]])
         return features
 
 def main(_):
-    model_name=''
-    record_file=''
-    checkpoints=''
+    model_name='inception_v3'
+    record_file='/tmp/Market-1501/market-1501_query.tfrecord'
+    checkpoints='/tmp/Market-1501'
     features = extract_features(model_name, record_file, checkpoints)
 
 
