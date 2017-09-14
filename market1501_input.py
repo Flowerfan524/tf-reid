@@ -110,28 +110,32 @@ def input_fn(filename,is_training=False):
             "img_raw": tf.FixedLenFeature((), tf.string, default_value=""),
             "label": tf.FixedLenFeature((), tf.int64,
                                         default_value=tf.zeros([], dtype=tf.int64)),
+            "cam": tf.FixedLenFeature((), tf.int64,
+                                        default_value=tf.zeros([], dtype=tf.int64))
             }
         parsed = tf.parse_single_example(record, keys_to_features)
 
         # Perform additional preprocessing on the parsed data.
-        image = tf.decode_raw(parsed["image_data"])
+        image = tf.decode_raw(parsed["img_raw"],tf.uint8)
         image = tf.reshape(image, [128, 64, 3])
         label = tf.cast(parsed["label"], tf.int32)
+        image = tf.cast(image,tf.float32)
+        cam = tf.cast(parsed["cam"], tf.int32)
 
-        return image, label
+        return image, label,cam
 
     # Use `Dataset.map()` to build a pair of a feature dictionary and a label
     # tensor for each example.
     dataset = dataset.map(parser)
-    dataset = dataset.batch(32)
+    #dataset = dataset.batch(32)
     if is_training:
         dataset = dataset.shuffle(buffer_size=10000)
     iterator = dataset.make_one_shot_iterator()
 
     # `features` is a dictionary in which each value is a batch of values for
     # that feature; `labels` is a batch of labels.
-    imgs, labels = iterator.get_next()
-    return imgs, labels
+    imgs, labels, cams = iterator.get_next()
+    return imgs, labels, cams
 
 
 
