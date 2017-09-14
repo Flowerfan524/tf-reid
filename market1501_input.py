@@ -129,6 +129,7 @@ def input_fn(filename,is_training=False):
     # Use `Dataset.map()` to build a pair of a feature dictionary and a label
     # tensor for each example.
     dataset = dataset.map(parser)
+    dataset.repeat(100)
     #dataset = dataset.batch(32)
     if is_training:
         dataset = dataset.shuffle(buffer_size=10000)
@@ -136,7 +137,10 @@ def input_fn(filename,is_training=False):
 
     # `features` is a dictionary in which each value is a batch of values for
     # that feature; `labels` is a batch of labels.
-    imgs, labels, cams = iterator.get_next()
+    try:
+        imgs, labels, cams = iterator.get_next()
+    except tf.errors.OutOfRangeError:
+        imgs, labels, cams = iterator.get_next()
     return imgs, labels, cams
 
 

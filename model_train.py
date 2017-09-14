@@ -8,7 +8,7 @@ import os
 slim = tf.contrib.slim
 
 tf.app.flags.DEFINE_string(
-    'train_dir', '/tmp/tfmodel/',
+    'train_dir', '/tmp/checkpoints/market-1501',
     'Directory where checkpoints and event logs are written to.')
 
 
