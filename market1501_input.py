@@ -140,19 +140,19 @@ def input_fn(filename,is_training=False):
 
 
 def main(_):
-    train_dir = '/tmp/market-1501/train/'
-    query_dir = '/tmp/market-1501/query/'
-    test_dir = '/tmp/market-1501/test/'
+    train_dir = '/tmp/Market-1501/train/'
+    query_dir = '/tmp/Market-1501/query/'
+    test_dir = '/tmp/Market-1501/test/'
 
-    training_filename = '{}/market-1501_{}.tfrecord'.format('/tmp/market-1501/','train')
+    training_filename = '{}/market-1501_{}.tfrecord'.format('/tmp/Market-1501','train')
     with tf.python_io.TFRecordWriter(training_filename) as tfrecord_writer:
         _conver_to_records(train_dir, tfrecord_writer)
 
-    quering_filename = '{}/market-1501_{}.tfrecord'.format('/tmp/market-1501/','query')
+    quering_filename = '{}/market-1501_{}.tfrecord'.format('/tmp/Market-1501','query')
     with tf.python_io.TFRecordWriter(quering_filename) as tfrecord_writer:
         _conver_to_records(query_dir, tfrecord_writer)
 
-    testing_filename = '{}/market-1501_{}.tfrecord'.format('/tmp/market-1501/','test')
+    testing_filename = '{}/market-1501_{}.tfrecord'.format('/tmp/Market-1501/','test')
     with tf.python_io.TFRecordWriter(testing_filename) as tfrecord_writer:
         _conver_to_records(test_dir, tfrecord_writer)
 
