@@ -1,6 +1,6 @@
 import tensorflow as tf
 from market1501_input import make_slim_dataset,input_fn
-from preprocessing import preprocessing_factory
+from preprocessing import preprocess_image
 from nets import nets_factory
 import os
 
@@ -141,7 +141,6 @@ def main(_):
         provider = slim.dataset_data_provider.DatasetDataProvider(dataset,shuffle=True)
         image,label = provider.get(['image','label'])
 
-
         ################
         # select network
         ################
@@ -153,17 +152,12 @@ def main(_):
         )
 
         ###############################
-        # select preprocessing function
+        #  preprocessing image
         ###############################
-        preprocessing_name = FLAGS.preprocessing_name or FLAGS.model_name
-        image_preprocessing_fn = preprocessing_factory.get_preprocessing(
-            preprocessing_name,
-            is_training=True
-        )
 
         train_image_size = network_fn.default_image_size
 
-        image = image_preprocessing_fn(image,train_image_size,train_image_size)
+        image = preprocess_image(image,train_image_size,train_image_size,is_training)
 
         images, labels = tf.train.batch(
             [image,label],
