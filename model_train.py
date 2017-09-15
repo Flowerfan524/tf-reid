@@ -134,10 +134,13 @@ def main(_):
         #############
         # data set
         ############
-        record_file = os.path.join(
-            FLAGS.dataset_dir,'%s%s.tfrecord'%(FLAGS.dataset_name,FLAGS.dataset_split_name))
-        image,label,_ = input_fn(record_file,is_training=True)
-        #dataset=make_slim_dataset(FLAGS.dataset_split_name, FLAGS.dataset_dir)
+        # record_file = os.path.join(
+        #     FLAGS.dataset_dir,'%s%s.tfrecord'%(FLAGS.dataset_name,FLAGS.dataset_split_name))
+        # image,label,_ = input_fn(record_file,is_training=True)
+        dataset=make_slim_dataset(FLAGS.dataset_split_name, FLAGS.dataset_dir)
+        provider = slim.dataset_data_provider.DatasetDataProvider(dataset,shuffle=True)
+        image,label = provider.get(['image','label'])
+
 
         ################
         # select network
