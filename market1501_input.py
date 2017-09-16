@@ -14,7 +14,8 @@ _ITEMS_TO_DESCRIPTIONS = {
     'label': 'A single integer between 0 and 9',
 }
 
-label_dict = {}
+label_dict={}
+
 
 
 def int64_feature(values):

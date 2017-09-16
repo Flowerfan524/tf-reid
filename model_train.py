@@ -6,6 +6,7 @@ import os
 
 
 slim = tf.contrib.slim
+tf.logging.set_verbosity(tf.logging.INFO)
 
 tf.app.flags.DEFINE_string(
     'train_dir', '/tmp/checkpoints/market-1501',
@@ -157,7 +158,7 @@ def main(_):
 
         train_image_size = network_fn.default_image_size
 
-        image = preprocess_image(image,train_image_size,train_image_size,is_training)
+        image = preprocess_image(image,train_image_size,train_image_size,is_training=True)
 
         images, labels = tf.train.batch(
             [image,label],

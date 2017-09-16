@@ -1,7 +1,7 @@
 import tensorflow as tf
 from market1501_input import input_fn
 from nets import nets_factory
-from preprocessing import preprocessing_factory
+from preprocessing import preprocess_image
 import os
 import numpy as np
 slim = tf.contrib.slim
@@ -9,6 +9,10 @@ slim = tf.contrib.slim
 tf.app.flags.DEFINE_string(
         'split_name', 'query',
         'The name of query/test split'
+        )
+tf.app.flags.DEFINE_string(
+        'model_name', 'inception_v3',
+        'The name of model'
         )
 FLAGS = tf.app.flags.FLAGS
 
@@ -29,10 +33,9 @@ def extract_features(model_name,record_file,checkpoints):
     cameras = []
     with tf.Graph().as_default():
         image,label,cam = input_fn(record_file)
-        image_preprocessing_fn = preprocessing_factory.get_preprocessing(model_name)
         network_fn = nets_factory.get_network_fn(model_name,num_classes=751)
         train_image_size = network_fn.default_image_size
-        image = image_preprocessing_fn(image,train_image_size,train_image_size)
+        image = preprocess_image(image,train_image_size,train_image_size)
         images,labels,cams = tf.train.batch([image,label,cam],batch_size=32)
         logits,endpoints = network_fn(images)
         if model_name not in feature_map: raise ValueError('model do not exist')
@@ -67,9 +70,9 @@ def extract_features(model_name,record_file,checkpoints):
 
 def main(_):
     split_name = FLAGS.split_name
-    model_name='inception_v3'
+    model_name=FLAGS.model_name
     record_file='/tmp/Market-1501/market-1501_%s.tfrecord'%split_name
-    checkpoints='/tmp/Market-1501'
+    checkpoints='/tmp/checkpoints/market-1501/%s'%model_name
     feature,label,cam = extract_features(model_name, record_file, checkpoints)
     np.savez('/tmp/Market-1501/feature/%s'%split_name,
             feature=feature,
