@@ -139,10 +139,7 @@ def input_fn(filename,is_training=False):
 
     # `features` is a dictionary in which each value is a batch of values for
     # that feature; `labels` is a batch of labels.
-    try:
-        imgs, labels, cams = iterator.get_next()
-    except tf.errors.OutOfRangeError:
-        imgs, labels, cams = iterator.get_next()
+    imgs, labels, cams = iterator.get_next()
     return imgs, labels, cams
 
 
