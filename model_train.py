@@ -124,7 +124,39 @@ def _get_init_fn():
     return slim.assign_from_checkpoint_fn(
             checkpoint_path,
             variables_to_restore)
-    
+
+
+
+def get_restore_variabels():
+    exclusions = []
+
+    exclusions = [scope.strip()
+        for scope in FLAGS.checkpoint_exclude_scopes.split(',')]
+
+    # TODO(sguada) variables.filter_variables()
+    variables_to_restore = []
+    for var in slim.get_model_variables():
+        excluded = False
+        for exclusion in exclusions:
+            if var.op.name.startswith(exclusion):
+                excluded = True
+                break
+        if not excluded:
+            variables_to_restore.append(var)
+
+    return variables_to_restore
+
+
+def initialize_uninitialized_vars(sess):
+    from itertools import compress
+    global_vars = tf.global_variables()
+    is_not_initialized = sess.run([~(tf.is_variable_initialized(var)) \
+                                   for var in global_vars])
+    not_initialized_vars = list(compress(global_vars, is_not_initialized))
+
+    if len(not_initialized_vars):
+        sess.run(tf.variables_initializer(not_initialized_vars))
+
 
 
 
@@ -186,19 +218,21 @@ def main(_):
         #optimizer = tf.train.GradientDescentOptimizer(learning_rate=.01)
         optimizer = tf.train.RMSPropOptimizer(learning_rate=0.001)
         train_op = optimizer.minimize(total_loss)
-        
+
+        variabels_to_restore = get_restore_variabels()
         saver = tf.train.Saver(variabels_to_restore)
         saver.restore(FLAGS.checkpoint)
-        
+
         #train_op = slim.learning.create_train_op(total_loss,optimizer)
         with tf.Session() as sess:
+            initialize_uninitialized_vars(sess)
             for step in range(FLAGS.max_number_of_steps):
                 _,loss = sess.run([train_op,total_loss])
                 if step % 10 == 0:
                     logging.info('step: {}, loss: {}'.format(step,loss))
                 if step % 1000 == 0:
                     saver.save(sess,FLAGS.train_dir,gloable_step=step)
-            
+
 
 
        # slim.learning.train(
