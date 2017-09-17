@@ -181,8 +181,9 @@ def main(_):
 
         total_loss = slim.losses.get_total_loss()
 
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate=.01)
-
+        #optimizer = tf.train.GradientDescentOptimizer(learning_rate=.01)
+        optimizer = tf.train.RMSPropOptimizer(learning_rate=0.01)
+        
         train_op = slim.learning.create_train_op(total_loss,optimizer)
 
 
