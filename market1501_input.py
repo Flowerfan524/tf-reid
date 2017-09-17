@@ -1,5 +1,6 @@
 import tensorflow as tf
 from PIL import Image
+from preprocessing import *
 import os
 slim = tf.contrib.slim
 
@@ -121,8 +122,8 @@ def input_fn(filename,is_training=False):
         # Perform additional preprocessing on the parsed data.
         image = tf.decode_raw(parsed["img_raw"],tf.uint8)
         image = tf.reshape(image, [128, 64, 3])
+        image = preprocess_image(image,224,224)
         label = tf.cast(parsed["label"], tf.int32)
-        image = tf.cast(image,tf.float32)
         cam = tf.cast(parsed["cam"], tf.int32)
 
         return image, label,cam
@@ -130,8 +131,8 @@ def input_fn(filename,is_training=False):
     # Use `Dataset.map()` to build a pair of a feature dictionary and a label
     # tensor for each example.
     dataset = dataset.map(parser)
-    dataset.repeat(100)
-    #dataset = dataset.batch(32)
+    dataset = dataset.repeat()
+    dataset = dataset.batch(32)
     if is_training:
         dataset = dataset.shuffle(buffer_size=10000)
     iterator = dataset.make_one_shot_iterator()

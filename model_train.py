@@ -124,6 +124,8 @@ def _get_init_fn():
     return slim.assign_from_checkpoint_fn(
             checkpoint_path,
             variables_to_restore)
+    
+
 
 
 def main(_):
@@ -135,12 +137,12 @@ def main(_):
         #############
         # data set
         ############
-        # record_file = os.path.join(
-        #     FLAGS.dataset_dir,'%s%s.tfrecord'%(FLAGS.dataset_name,FLAGS.dataset_split_name))
-        # image,label,_ = input_fn(record_file,is_training=True)
-        dataset=make_slim_dataset(FLAGS.dataset_split_name, FLAGS.dataset_dir)
-        provider = slim.dataset_data_provider.DatasetDataProvider(dataset,shuffle=True)
-        image,label = provider.get(['image','label'])
+        record_file = os.path.join(
+             FLAGS.dataset_dir,'%s%s.tfrecord'%(FLAGS.dataset_name,FLAGS.dataset_split_name))
+        images,labels,_ = input_fn(record_file,is_training=True)
+        #dataset=make_slim_dataset(FLAGS.dataset_split_name, FLAGS.dataset_dir)
+        #provider = slim.dataset_data_provider.DatasetDataProvider(dataset,shuffle=True)
+        #image,label = provider.get(['image','label'])
 
         ################
         # select network
@@ -156,15 +158,15 @@ def main(_):
         #  preprocessing image
         ###############################
 
-        train_image_size = network_fn.default_image_size
+        #train_image_size = network_fn.default_image_size
 
-        image = preprocess_image(image,train_image_size,train_image_size,is_training=True)
+        #image = preprocess_image(image,train_image_size,train_image_size,is_training=True)
 
-        images, labels = tf.train.batch(
-            [image,label],
-            batch_size=FLAGS.batch_size,
-            capacity=5 * FLAGS.batch_size
-        )
+        #images, labels = tf.train.batch(
+        #    [image,label],
+        #    batch_size=FLAGS.batch_size,
+        #    capacity=5 * FLAGS.batch_size
+        #)
         labels = slim.one_hot_encoding(
           labels, 751)
 
@@ -182,19 +184,30 @@ def main(_):
         total_loss = slim.losses.get_total_loss()
 
         #optimizer = tf.train.GradientDescentOptimizer(learning_rate=.01)
-        optimizer = tf.train.RMSPropOptimizer(learning_rate=0.01)
+        optimizer = tf.train.RMSPropOptimizer(learning_rate=0.001)
+        train_op = optimizer.minimize(total_loss)
         
-        train_op = slim.learning.create_train_op(total_loss,optimizer)
+        saver = tf.train.Saver(variabels_to_restore)
+        saver.restore(FLAGS.checkpoint)
+        
+        #train_op = slim.learning.create_train_op(total_loss,optimizer)
+        with tf.Session() as sess:
+            for step in range(FLAGS.max_number_of_steps):
+                _,loss = sess.run([train_op,total_loss])
+                if step % 10 == 0:
+                    logging.info('step: {}, loss: {}'.format(step,loss))
+                if step % 1000 == 0:
+                    saver.save(sess,FLAGS.train_dir,gloable_step=step)
+            
 
 
-
-        slim.learning.train(
-            train_op,
-            logdir=FLAGS.train_dir,
-            number_of_steps=FLAGS.max_number_of_steps,
-            log_every_n_steps=FLAGS.log_every_n_steps,
-            init_fn=_get_init_fn()
-        )
+       # slim.learning.train(
+       #     train_op,
+       #     logdir=FLAGS.train_dir,
+       #     number_of_steps=FLAGS.max_number_of_steps,
+       #     log_every_n_steps=FLAGS.log_every_n_steps,
+       #     init_fn=_get_init_fn()
+       # )
 
 
 
