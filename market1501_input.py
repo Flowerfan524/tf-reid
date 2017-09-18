@@ -104,7 +104,8 @@ def make_slim_dataset(split_name,data_dir):
     items_to_descriptions=_ITEMS_TO_DESCRIPTIONS,
     num_classes=_NUM_CLASSES)
 
-def input_fn(filename,is_training=False):
+def input_fn():
+    filename = '/tmp/Market-1501/market-1501_train.tfrecord'
     dataset = tf.contrib.data.TFRecordDataset([filename])
 
     # Use `tf.parse_single_example()` to extract data from a `tf.Example`
@@ -122,7 +123,7 @@ def input_fn(filename,is_training=False):
         # Perform additional preprocessing on the parsed data.
         image = tf.decode_raw(parsed["img_raw"],tf.uint8)
         image = tf.reshape(image, [128, 64, 3])
-        image = preprocess_image(image,224,224)
+        image = preprocess_image(image,224,224,True)
         label = tf.cast(parsed["label"], tf.int32)
         cam = tf.cast(parsed["cam"], tf.int32)
 
@@ -133,8 +134,7 @@ def input_fn(filename,is_training=False):
     dataset = dataset.map(parser)
     dataset = dataset.repeat()
     dataset = dataset.batch(32)
-    if is_training:
-        dataset = dataset.shuffle(buffer_size=10000)
+    dataset = dataset.shuffle(buffer_size=10000)
     iterator = dataset.make_one_shot_iterator()
 
     # `features` is a dictionary in which each value is a batch of values for

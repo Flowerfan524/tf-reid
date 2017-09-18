@@ -166,13 +166,13 @@ def main(_):
 
 
     with tf.Graph().as_default():
-        with tf.Session() as sess:
         #############
         # data set
         ############
-            record_file = os.path.join(
-                FLAGS.dataset_dir,'%s%s.tfrecord'%(FLAGS.dataset_name,FLAGS.dataset_split_name))
-            images,labels,_ = input_fn(record_file,is_training=True)
+        #record_file = os.path.join(
+        #    FLAGS.dataset_dir,'%s%s.tfrecord'%(FLAGS.dataset_name,FLAGS.dataset_split_name))
+        #images,labels,_ = input_fn(record_file,is_training=True)
+        images,labels,_ = input_fn()
         #dataset=make_slim_dataset(FLAGS.dataset_split_name, FLAGS.dataset_dir)
         #provider = slim.dataset_data_provider.DatasetDataProvider(dataset,shuffle=True)
         #image,label = provider.get(['image','label'])
@@ -180,12 +180,12 @@ def main(_):
         ################
         # select network
         ################
-            network_fn = nets_factory.get_network_fn(
-                FLAGS.model_name,
-                num_classes=751,
-                weight_decay=FLAGS.weight_decay,
-                is_training=True
-            )
+        network_fn = nets_factory.get_network_fn(
+            FLAGS.model_name,
+            num_classes=751,
+            weight_decay=FLAGS.weight_decay,
+            is_training=True
+        )
 
         ###############################
         #  preprocessing image
@@ -200,11 +200,19 @@ def main(_):
         #    batch_size=FLAGS.batch_size,
         #    capacity=5 * FLAGS.batch_size
         #)
-            labels = slim.one_hot_encoding(labels, 751)
+        labels = slim.one_hot_encoding(labels, 751)
 
-            logits, end_points = network_fn(images)
+        logits, end_points = network_fn(images)
 
 
+        #optimizer = tf.train.GradientDescentOptimizer(learning_rate=.01)
+
+        variabels_to_restore = get_restore_variabels()
+        saver = tf.train.Saver(variabels_to_restore,max_to_keep=4)
+
+        with tf.Session() as sess:
+        #train_op = slim.learning.create_train_op(total_loss,optimizer)
+            saver.restore(sess,FLAGS.checkpoint_path)
             if 'AuxLogits' in end_points:
                 tf.losses.softmax_cross_entropy(
                     logits=end_points['AuxLogits'], onehot_labels=labels,
@@ -212,25 +220,22 @@ def main(_):
             tf.losses.softmax_cross_entropy(
                 logits=logits, onehot_labels=labels,
                 label_smoothing=0, weights=1.0)
-
             total_loss = slim.losses.get_total_loss()
 
-        #optimizer = tf.train.GradientDescentOptimizer(learning_rate=.01)
             optimizer = tf.train.RMSPropOptimizer(learning_rate=0.001)
             train_op = optimizer.minimize(total_loss,global_step=tf.train.get_global_step())
 
-            variabels_to_restore = get_restore_variabels()
-            saver = tf.train.Saver(variabels_to_restore)
 
-        #train_op = slim.learning.create_train_op(total_loss,optimizer)
-            saver.restore(sess,FLAGS.checkpoint_path)
             initialize_uninitialized_vars(sess)
             for step in range(FLAGS.max_number_of_steps):
-                _,loss = sess.run([train_op,total_loss])
-                if step % 10 == 0:
-                    print('step: {}, loss: {}'.format(step,loss))
-                if step % 2000 == 0:
-                    saver.save(sess,FLAGS.train_dir,gloable_step=step)
+                try:
+                    _,loss = sess.run([train_op,total_loss])
+                    if step % 10 == 0:
+                        print('step: {}, loss: {}'.format(step,loss))
+                    if step % 2000 == 0:
+                        saver.save(sess,FLAGS.train_dir,gloable_step=step)
+                except tf.errors.OutOfRangeError:
+                    break
 
 
 
