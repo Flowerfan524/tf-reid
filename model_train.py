@@ -169,10 +169,10 @@ def main(_):
         #############
         # data set
         ############
-        #record_file = os.path.join(
-        #    FLAGS.dataset_dir,'%s%s.tfrecord'%(FLAGS.dataset_name,FLAGS.dataset_split_name))
-        #images,labels,_ = input_fn(record_file,is_training=True)
-        images,labels,_ = input_fn()
+        record_file = os.path.join(
+            FLAGS.dataset_dir,'%s%s.tfrecord'%(FLAGS.dataset_name,FLAGS.dataset_split_name))
+        images,labels,_ = input_fn(record_file,is_training=True)
+        #images,labels,_ = input_fn()
         #dataset=make_slim_dataset(FLAGS.dataset_split_name, FLAGS.dataset_dir)
         #provider = slim.dataset_data_provider.DatasetDataProvider(dataset,shuffle=True)
         #image,label = provider.get(['image','label'])
@@ -205,7 +205,6 @@ def main(_):
         logits, end_points = network_fn(images)
 
 
-        #optimizer = tf.train.GradientDescentOptimizer(learning_rate=.01)
 
         variabels_to_restore = get_restore_variabels()
         saver = tf.train.Saver(variabels_to_restore,max_to_keep=4)
@@ -217,12 +216,13 @@ def main(_):
                 tf.losses.softmax_cross_entropy(
                     logits=end_points['AuxLogits'], onehot_labels=labels,
                     label_smoothing=0, weights=0.4, scope='aux_loss')
-            tf.losses.softmax_cross_entropy(
+            total_loss = tf.losses.softmax_cross_entropy(
                 logits=logits, onehot_labels=labels,
                 label_smoothing=0, weights=1.0)
-            total_loss = slim.losses.get_total_loss()
+            #total_loss = slim.losses.get_total_loss()
+            optimizer = tf.train.GradientDescentOptimizer(learning_rate=.01)
 
-            optimizer = tf.train.RMSPropOptimizer(learning_rate=0.001)
+            #optimizer = tf.train.RMSPropOptimizer(learning_rate=0.01)
             train_op = optimizer.minimize(total_loss,global_step=tf.train.get_global_step())
 
 
@@ -233,7 +233,7 @@ def main(_):
                     if step % 10 == 0:
                         print('step: {}, loss: {}'.format(step,loss))
                     if step % 2000 == 0:
-                        saver.save(sess,FLAGS.train_dir,gloable_step=step)
+                        saver.save(sess,FLAGS.train_dir,global_step=step)
                 except tf.errors.OutOfRangeError:
                     break
 

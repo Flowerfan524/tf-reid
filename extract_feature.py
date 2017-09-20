@@ -32,11 +32,9 @@ def extract_features(model_name,record_file,checkpoints):
     classes = []
     cameras = []
     with tf.Graph().as_default():
-        image,label,cam = input_fn(record_file)
+        images,labels,cams = input_fn(record_file)
         network_fn = nets_factory.get_network_fn(model_name,num_classes=751)
         train_image_size = network_fn.default_image_size
-        image = preprocess_image(image,train_image_size,train_image_size)
-        images,labels,cams = tf.train.batch([image,label,cam],batch_size=32)
         #saver = tf.train.import_meta_graph('%s/model.ckpt-38000.meta'%checkpoints)
         logits,_ = network_fn(images)
         if model_name not in feature_map: raise ValueError('model do not exist')
@@ -56,8 +54,6 @@ def extract_features(model_name,record_file,checkpoints):
         #with tf.Session() as sess:
         #    init_op = tf.global_variables_initializer()
         #    sess.run(init_op)
-            coord = tf.train.Coordinator()
-            threads = tf.train.start_queue_runners(coord=coord)
             while True:
                 try:
                     np_feature,np_label,np_cam = sess.run([feature,labels,cams])
@@ -66,8 +62,6 @@ def extract_features(model_name,record_file,checkpoints):
                     cameras += [np_cam]
                 except tf.errors.OutOfRangeError:
                     break
-            coord.request_stop()
-            coord.join(threads)
         features = np.reshape(features,[-1,feature.shape[-1]])
         classes = np.reshape(classes,[-1,1])
         cameras = np.reshape(cameras,[-1,1])
