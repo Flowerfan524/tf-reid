@@ -39,21 +39,11 @@ def extract_features(model_name,record_file,checkpoints):
         logits,_ = network_fn(images)
         if model_name not in feature_map: raise ValueError('model do not exist')
         feature_name = feature_map[model_name]
+        feature = sess.graph.get_tensor_by_name(feature_name)
+        feature = tf.squeeze(feature)
+        saver = tf.train.Saver()
         with tf.Session() as sess:
-            feature = sess.graph.get_tensor_by_name(feature_name)
-            feature = tf.squeeze(feature)
-            saver = tf.train.Saver()
-            saver.restore(sess,tf.train.latest_checkpoint(checkpoints))
-
-        #init_fn = slim.assign_from_checkpoint_fn(
-        #    checkpoints,
-        #    slim.get_variables_to_restore())
-        
-        #sv = tf.train.Supervisor(logdir=checkpoints)
-        #with sv.managed_session() as sess:
-        #with tf.Session() as sess:
-        #    init_op = tf.global_variables_initializer()
-        #    sess.run(init_op)
+            saver.restore(sess,tf.train.latest_checkpoint(checkpoints)
             while True:
                 try:
                     np_feature,np_label,np_cam = sess.run([feature,labels,cams])

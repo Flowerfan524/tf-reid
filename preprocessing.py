@@ -197,37 +197,7 @@ def _mean_image_subtraction(image, means):
   return tf.concat(axis=2, values=channels)
 
 
-def _smallest_size_at_least(height, width, smallest_side):
-  """Computes new shape with the smallest side equal to `smallest_side`.
-
-  Computes new shape with the smallest side equal to `smallest_side` while
-  preserving the original aspect ratio.
-
-  Args:
-    height: an int32 scalar tensor indicating the current height.
-    width: an int32 scalar tensor indicating the current width.
-    smallest_side: A python integer or scalar `Tensor` indicating the size of
-      the smallest side after resize.
-
-  Returns:
-    new_height: an int32 scalar tensor indicating the new height.
-    new_width: and int32 scalar tensor indicating the new width.
-  """
-  smallest_side = tf.convert_to_tensor(smallest_side, dtype=tf.int32)
-
-  height = tf.to_float(height)
-  width = tf.to_float(width)
-  smallest_side = tf.to_float(smallest_side)
-
-  scale = tf.cond(tf.greater(height, width),
-                  lambda: smallest_side / width,
-                  lambda: smallest_side / height)
-  new_height = tf.to_int32(height * scale)
-  new_width = tf.to_int32(width * scale)
-  return new_height, new_width
-
-
-def _aspect_preserving_resize(image, smallest_side):
+def _aspect_preserving_resize(image, resize_size):
   """Resize images preserving the original aspect ratio.
 
   Args:
@@ -238,25 +208,17 @@ def _aspect_preserving_resize(image, smallest_side):
   Returns:
     resized_image: A 3-D tensor containing the resized image.
   """
-  smallest_side = tf.convert_to_tensor(smallest_side, dtype=tf.int32)
-
-  shape = tf.shape(image)
-  height = shape[0]
-  width = shape[1]
-  new_height, new_width = _smallest_size_at_least(height, width, smallest_side)
   image = tf.expand_dims(image, 0)
-  resized_image = tf.image.resize_bilinear(image, [new_height, new_width],
-                                           align_corners=False)
+  resized_image = tf.image.resize_bilinear(image, [resize_size, resize_size])
   resized_image = tf.squeeze(resized_image)
   resized_image.set_shape([None, None, 3])
   return resized_image
 
 
 def preprocess_for_train(image,
-                         output_height,
-                         output_width,
-                         resize_side_min=_RESIZE_SIDE_MIN,
-                         resize_side_max=_RESIZE_SIDE_MAX):
+                         output_size,
+                         resize_size=_RESIZE_SIDE_MIN
+                         ):
   """Preprocesses the given image for training.
 
   Note that the actual resizing scale is sampled from
@@ -274,32 +236,27 @@ def preprocess_for_train(image,
   Returns:
     A preprocessed image.
   """
-  resize_side = tf.random_uniform(
-      [], minval=resize_side_min, maxval=resize_side_max+1, dtype=tf.int32)
-
-  image = _aspect_preserving_resize(image, resize_side)
-  image = _random_crop([image], output_height, output_width)[0]
-  image.set_shape([output_height, output_width, 3])
+  image = _aspect_preserving_resize(image, resize_size)
+  image = _random_crop([image], output_size, output_size)[0]
+  image.set_shape([output_size, output_size, 3])
   image = tf.to_float(image)
   image = tf.image.random_flip_left_right(image)
   return _mean_image_subtraction(image, [_R_MEAN, _G_MEAN, _B_MEAN])
 
 
-def preprocess_for_eval(image, output_height, output_width, resize_side):
+def preprocess_for_eval(image, output_size):
   """Preprocesses the given image for evaluation.
 
   Args:
     image: A `Tensor` representing an image of arbitrary size.
-    output_height: The height of the image after preprocessing.
-    output_width: The width of the image after preprocessing.
+    output_size: The size of the image after preprocessing.
     resize_side: The smallest side of the image for aspect-preserving resizing.
 
   Returns:
     A preprocessed image.
   """
-  image = _aspect_preserving_resize(image, resize_side)
-  image = _central_crop([image], output_height, output_width)[0]
-  image.set_shape([output_height, output_width, 3])
+  image = _aspect_preserving_resize(image, output_size)
+  image.set_shape([output_size, output_size, 3])
   image = tf.to_float(image)
   return _mean_image_subtraction(image, [_R_MEAN, _G_MEAN, _B_MEAN])
 
