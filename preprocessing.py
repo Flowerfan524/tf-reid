@@ -261,9 +261,8 @@ def preprocess_for_eval(image, output_size):
   return _mean_image_subtraction(image, [_R_MEAN, _G_MEAN, _B_MEAN])
 
 
-def preprocess_image(image, output_height, output_width, is_training=False,
-                     resize_side_min=_RESIZE_SIDE_MIN,
-                     resize_side_max=_RESIZE_SIDE_MAX):
+def preprocess_image(image, output_size, is_training=False,
+                     resize_size=_RESIZE_SIDE_MIN):
   """Preprocesses the given image.
 
   Args:
@@ -284,8 +283,6 @@ def preprocess_image(image, output_height, output_width, is_training=False,
     A preprocessed image.
   """
   if is_training:
-    return preprocess_for_train(image, output_height, output_width,
-                                resize_side_min, resize_side_max)
+    return preprocess_for_train(image, output_size,resize_size)
   else:
-    return preprocess_for_eval(image, output_height, output_width,
-                               resize_side_min)
+    return preprocess_for_eval(image, output_size)
