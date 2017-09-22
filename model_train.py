@@ -200,55 +200,41 @@ def main(_):
         #    batch_size=FLAGS.batch_size,
         #    capacity=5 * FLAGS.batch_size
         #)
+        
         labels = slim.one_hot_encoding(labels, 751)
-
         logits, end_points = network_fn(images)
-
+        if 'AuxLogits' in end_points:
+            tf.losses.softmax_cross_entropy(
+                    logits=end_points['AuxLogits'], onehot_labels=labels,
+                    label_smoothing=0, weights=0.4, scope='aux_loss')
+        tf.losses.softmax_cross_entropy(
+                logits=logits, onehot_labels=labels,
+                label_smoothing=0, weights=1.0)
+        total_loss = tf.losses.get_total_loss()
+        optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
+        train_op = optimizer.minimize(total_loss,global_step=tf.train.get_global_step())
 
 
         variabels_to_restore = get_restore_variabels()
-        saver = tf.train.Saver(variabels_to_restore,max_to_keep=4)
-
+        restore_saver = tf.train.Saver(variabels_to_restore,max_to_keep=4)
+        saver = tf.train.Saver()
+        mean_loss = 0
         with tf.Session() as sess:
-        #train_op = slim.learning.create_train_op(total_loss,optimizer)
-            saver.restore(sess,FLAGS.checkpoint_path)
-            if 'AuxLogits' in end_points:
-                tf.losses.softmax_cross_entropy(
-                    logits=end_points['AuxLogits'], onehot_labels=labels,
-                    label_smoothing=0, weights=0.4, scope='aux_loss')
-            total_loss = tf.losses.softmax_cross_entropy(
-                logits=logits, onehot_labels=labels,
-                label_smoothing=0, weights=1.0)
-            #total_loss = slim.losses.get_total_loss()
-            optimizer = tf.train.GradientDescentOptimizer(learning_rate=.01)
-
-            #optimizer = tf.train.RMSPropOptimizer(learning_rate=0.01)
-            train_op = optimizer.minimize(total_loss,global_step=tf.train.get_global_step())
-
-
-            initialize_uninitialized_vars(sess)
+            #initialize_uninitialized_vars(sess)
+            init_op = tf.global_varibles_initializer()
+            sess.run(init_op)
+            restore_saver.restore(sess,FLAGS.checkpoint_path)
             for step in range(FLAGS.max_number_of_steps):
                 try:
                     _,loss = sess.run([train_op,total_loss])
+                    mean_loss += loss
                     if step % 10 == 0:
-                        print('step: {}, loss: {}'.format(step,loss))
+                        tf.logging.info('step: {}, loss: {}'.format(step,mean_loss/10))
+                        mean_loss = 0
                     if step % 2000 == 0:
                         saver.save(sess,FLAGS.train_dir,global_step=step)
                 except tf.errors.OutOfRangeError:
                     break
-
-
-
-       # slim.learning.train(
-       #     train_op,
-       #     logdir=FLAGS.train_dir,
-       #     number_of_steps=FLAGS.max_number_of_steps,
-       #     log_every_n_steps=FLAGS.log_every_n_steps,
-       #     init_fn=_get_init_fn()
-       # )
-
-
-
 
 
 if __name__ == '__main__':

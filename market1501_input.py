@@ -6,7 +6,7 @@ slim = tf.contrib.slim
 
 
 
-SPLITS_TO_SIZES = {'train': 12936, 'query':3800, 'test': 10000}
+SPLITS_TO_SIZES = {'train': 12936, 'query':3368, 'test': 19732}
 
 _NUM_CLASSES = 751
 
@@ -123,7 +123,7 @@ def input_fn(filename,is_training=False):
         # Perform additional preprocessing on the parsed data.
         image = tf.decode_raw(parsed["img_raw"],tf.uint8)
         image = tf.reshape(image, [128, 64, 3])
-        image = preprocess_image(image,224,224,True)
+        image = preprocess_image(image,224,224,is_training)
         label = tf.cast(parsed["label"], tf.int32)
         cam = tf.cast(parsed["cam"], tf.int32)
 
@@ -131,11 +131,11 @@ def input_fn(filename,is_training=False):
 
     # Use `Dataset.map()` to build a pair of a feature dictionary and a label
     # tensor for each example.
-    dataset = dataset.map(parser)
-    dataset = dataset.repeat()
-    dataset = dataset.batch(32)
     if is_training:
+        dataset = dataset.repeat()
         dataset = dataset.shuffle(buffer_size=32)
+    dataset = dataset.map(parser)
+    dataset = dataset.batch(32)
     iterator = dataset.make_one_shot_iterator()
 
     # `features` is a dictionary in which each value is a batch of values for
