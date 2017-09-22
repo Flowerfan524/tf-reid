@@ -4,9 +4,9 @@ import tensorflow as tf
 This preprocessing file are the copy from tensorflow/models/slim/preprocessing/vgg_preprocessing
 """
 
-_R_MEAN = 97.8286
+_R_MEAN = 105.606
 _G_MEAN = 99.0468
-_B_MEAN = 105.606
+_B_MEAN = 97.8286
 
 _RESIZE_SIDE_MIN=256
 _RESIZE_SIDE_MAX=512
