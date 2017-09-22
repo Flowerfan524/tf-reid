@@ -123,7 +123,7 @@ def input_fn(filename,is_training=False):
         # Perform additional preprocessing on the parsed data.
         image = tf.decode_raw(parsed["img_raw"],tf.uint8)
         image = tf.reshape(image, [128, 64, 3])
-        image = preprocess_image(image,224,224,is_training)
+        image = preprocess_image(image,224,is_training)
         label = tf.cast(parsed["label"], tf.int32)
         cam = tf.cast(parsed["cam"], tf.int32)
 

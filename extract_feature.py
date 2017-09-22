@@ -39,11 +39,11 @@ def extract_features(model_name,record_file,checkpoints):
         logits,_ = network_fn(images)
         if model_name not in feature_map: raise ValueError('model do not exist')
         feature_name = feature_map[model_name]
-        feature = sess.graph.get_tensor_by_name(feature_name)
+        feature = tf.get_default_graph().get_tensor_by_name(feature_name)
         feature = tf.squeeze(feature)
         saver = tf.train.Saver()
         with tf.Session() as sess:
-            saver.restore(sess,tf.train.latest_checkpoint(checkpoints)
+            saver.restore(sess,tf.train.latest_checkpoint(checkpoints))
             while True:
                 try:
                     np_feature,np_label,np_cam = sess.run([feature,labels,cams])
@@ -52,9 +52,9 @@ def extract_features(model_name,record_file,checkpoints):
                     cameras += [np_cam]
                 except tf.errors.OutOfRangeError:
                     break
-        features = np.reshape(features,[-1,feature.shape[-1]])
-        classes = np.reshape(classes,[-1,1])
-        cameras = np.reshape(cameras,[-1,1])
+        features = np.concatenate(features)
+        classes = np.concatenate(classes)
+        cameras = np.concatenate(cameras)
         return features,classes,cameras
 
 def main(_):

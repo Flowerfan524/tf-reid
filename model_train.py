@@ -2,6 +2,7 @@ import tensorflow as tf
 from market1501_input import make_slim_dataset,input_fn
 from preprocessing import preprocess_image
 from nets import nets_factory
+import time
 import os
 
 
@@ -69,7 +70,7 @@ tf.app.flags.DEFINE_string(
 ######################
 
 tf.app.flags.DEFINE_float(
-    'weight_decay', 0.00004, 'The weight decay on the model weights.')
+    'weight_decay', 0.0005, 'The weight decay on the model weights.')
 
 
 FLAGS = tf.app.flags.FLAGS
@@ -221,18 +222,20 @@ def main(_):
         mean_loss = 0
         with tf.Session() as sess:
             #initialize_uninitialized_vars(sess)
-            init_op = tf.global_varibles_initializer()
+            init_op = tf.global_variables_initializer()
             sess.run(init_op)
             restore_saver.restore(sess,FLAGS.checkpoint_path)
+            start_time = time.time()
             for step in range(FLAGS.max_number_of_steps):
                 try:
                     _,loss = sess.run([train_op,total_loss])
                     mean_loss += loss
-                    if step % 10 == 0:
-                        tf.logging.info('step: {}, loss: {}'.format(step,mean_loss/10))
+                    if step % 20 == 19:
+                        left_second = (time.time()-start_time)/step * (FLAGS.max_number_of_steps - step)
+                        tf.logging.info('step: {}, loss: {}, time left: {}'.format(step,mean_loss/20,time.strftime('%H:%M:%S',time.gmtime(left_seconds))))
                         mean_loss = 0
                     if step % 2000 == 0:
-                        saver.save(sess,FLAGS.train_dir,global_step=step)
+                        saver.save(sess,'%s/model.ckpt'%FLAGS.train_dir,global_step=step)
                 except tf.errors.OutOfRangeError:
                     break
 
