@@ -39,6 +39,7 @@ def bytes_feature(values):
   Args:
     values: A string.
 
+
   Returns:
     a TF-Feature.
   """
@@ -132,10 +133,10 @@ def input_fn(filename,is_training=False):
     # Use `Dataset.map()` to build a pair of a feature dictionary and a label
     # tensor for each example.
     if is_training:
+        dataset = dataset.shuffle(buffer_size=20000)
         dataset = dataset.repeat()
-        dataset = dataset.shuffle(buffer_size=32)
     dataset = dataset.map(parser)
-    dataset = dataset.batch(32)
+    dataset = dataset.batch(48)
     iterator = dataset.make_one_shot_iterator()
 
     # `features` is a dictionary in which each value is a batch of values for

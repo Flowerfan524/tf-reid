@@ -34,7 +34,7 @@ def extract_features(model_name,record_file,checkpoints):
     with tf.Graph().as_default():
         images,labels,cams = input_fn(record_file)
         network_fn = nets_factory.get_network_fn(model_name,num_classes=751)
-        train_image_size = network_fn.default_image_size
+        #train_image_size = network_fn.default_image_size
         #saver = tf.train.import_meta_graph('%s/model.ckpt-38000.meta'%checkpoints)
         logits,_ = network_fn(images)
         if model_name not in feature_map: raise ValueError('model do not exist')
@@ -47,6 +47,7 @@ def extract_features(model_name,record_file,checkpoints):
             while True:
                 try:
                     np_feature,np_label,np_cam = sess.run([feature,labels,cams])
+                    assert np_feature.shape[0] == np_label.shape[0]
                     features += [np_feature]
                     classes += [np_label]
                     cameras += [np_cam]

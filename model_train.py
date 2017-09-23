@@ -188,20 +188,6 @@ def main(_):
             is_training=True
         )
 
-        ###############################
-        #  preprocessing image
-        ###############################
-
-        #train_image_size = network_fn.default_image_size
-
-        #image = preprocess_image(image,train_image_size,train_image_size,is_training=True)
-
-        #images, labels = tf.train.batch(
-        #    [image,label],
-        #    batch_size=FLAGS.batch_size,
-        #    capacity=5 * FLAGS.batch_size
-        #)
-        
         labels = slim.one_hot_encoding(labels, 751)
         logits, end_points = network_fn(images)
         if 'AuxLogits' in end_points:
@@ -212,7 +198,8 @@ def main(_):
                 logits=logits, onehot_labels=labels,
                 label_smoothing=0, weights=1.0)
         total_loss = tf.losses.get_total_loss()
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
+        #optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
+        optimizer = tf.train.MomentumOptimizer(0.001,0.9)
         train_op = optimizer.minimize(total_loss,global_step=tf.train.get_global_step())
 
 
@@ -230,12 +217,12 @@ def main(_):
                 try:
                     _,loss = sess.run([train_op,total_loss])
                     mean_loss += loss
-                    if step % 20 == 19:
-                        left_second = (time.time()-start_time)/step * (FLAGS.max_number_of_steps - step)
+                    if (step+1) % 20 == 0:
+                        left_seconds = (time.time()-start_time)/step * (FLAGS.max_number_of_steps - step)
                         tf.logging.info('step: {}, loss: {}, time left: {}'.format(step,mean_loss/20,time.strftime('%H:%M:%S',time.gmtime(left_seconds))))
                         mean_loss = 0
-                    if step % 2000 == 0:
-                        saver.save(sess,'%s/model.ckpt'%FLAGS.train_dir,global_step=step)
+                    if (step+1) % 2000 == 0:
+                        saver.save(sess,'%s/model.ckpt'%FLAGS.train_dir,global_step=step+1)
                 except tf.errors.OutOfRangeError:
                     break
 
