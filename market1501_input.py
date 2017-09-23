@@ -114,10 +114,8 @@ def input_fn(filename,is_training=False):
     def parser(record):
         keys_to_features = {
             "img_raw": tf.FixedLenFeature((), tf.string, default_value=""),
-            "label": tf.FixedLenFeature((), tf.int64,
-                                        default_value=tf.zeros([], dtype=tf.int64)),
-            "cam": tf.FixedLenFeature((), tf.int64,
-                                        default_value=tf.zeros([], dtype=tf.int64))
+            "label": tf.FixedLenFeature((), tf.int64,default_value=0),
+            "cam": tf.FixedLenFeature((), tf.int64,default_value=0)
             }
         parsed = tf.parse_single_example(record, keys_to_features)
 
@@ -125,22 +123,77 @@ def input_fn(filename,is_training=False):
         image = tf.decode_raw(parsed["img_raw"],tf.uint8)
         image = tf.reshape(image, [128, 64, 3])
         image = preprocess_image(image,224,is_training)
+        image = tf.cast(image,tf.float32)
         label = tf.cast(parsed["label"], tf.int32)
         cam = tf.cast(parsed["cam"], tf.int32)
 
         return image, label,cam
 
-    # Use `Dataset.map()` to build a pair of a feature dictionary and a label
-    # tensor for each example.
+
     if is_training:
-        dataset = dataset.shuffle(buffer_size=20000)
+        dataset = dataset.shuffle(buffer_size=10000)
         dataset = dataset.repeat()
     dataset = dataset.map(parser)
     dataset = dataset.batch(48)
     iterator = dataset.make_one_shot_iterator()
 
-    # `features` is a dictionary in which each value is a batch of values for
-    # that feature; `labels` is a batch of labels.
+    imgs, labels, cams = iterator.get_next()
+    return imgs, labels, cams
+
+def get_cam_label(data_dir):
+    filenames = [filename for filename in os.listdir(data_dir) if filename.endswith('.jpg')]
+    labels = []
+    cams = []
+    label_dict = {}
+    for filename in filenames:
+        if filename.startswith('-'):
+            label = -1
+            cam = int(filename[4])
+        else:
+            label = int(x=filename[:4])
+            if label not in label_dict:
+                label_dict[label] = value
+                value += 1
+            label = label_dict[label]
+            cam = int(x=filename[6])
+        labels += [label]
+        cams += [cam]
+    return labels,cams
+
+def img_input_fn(data_dir,is_training=False):
+    filenames = [os.path.join(data_dir,filename) for filename in os.listdir(data_dir) if filename.endswith('.jpg')]
+    labels, cams = get_cam_label(data_dir)
+    dataset = tf.contrib.data.Dataset.from_tensor_slices((tf.constant(filenames),tf.constant(labels),tf.constant(cams)))
+
+    # Use `tf.parse_single_example()` to extract data from a `tf.Example`
+    # protocol buffer, and perform any additional per-record preprocessing.
+    def process_image(image):
+        if is_training:
+            image = tf.image.resize_images(image,(256,256))
+            image = tf.image.random_flip_left_right(image)
+            image = tf.random_crop(image,(224,224,3))
+        else:
+            image = tf.image.resize_iamges(image,(224,224))
+        return image
+
+
+    def _read_img(filename,label,cam):
+
+        image_string = tf.read_file(filename)
+        image = tf.image.decode_jpeg(image_string)
+        image = process_image(image)
+        mean = tf.constant([105.606,99.0468,97.8286])
+        image -= mean
+
+        return image,label,cam
+
+
+    if is_training:
+        dataset = dataset.shuffle(buffer_size=10000)
+        dataset = dataset.repeat()
+    dataset = dataset.map(_read_img)
+#     dataset = dataset.batch(48)
+    iterator = dataset.make_one_shot_iterator()
     imgs, labels, cams = iterator.get_next()
     return imgs, labels, cams
 

@@ -1,5 +1,5 @@
 import tensorflow as tf
-from market1501_input import make_slim_dataset,input_fn
+from market1501_input import *
 from preprocessing import preprocess_image
 from nets import nets_factory
 import time
@@ -172,7 +172,10 @@ def main(_):
         ############
         record_file = os.path.join(
             FLAGS.dataset_dir,'%s%s.tfrecord'%(FLAGS.dataset_name,FLAGS.dataset_split_name))
-        images,labels,_ = input_fn(record_file,is_training=True)
+        train_dir = '/tmp/Market-1501/'
+        images, labels, _ = img_input_fn(train_dir,True)
+        # images,labels,_ = input_fn(record_file,True)
+        labels = tf.contrib.layers.one_hot_encoding(labels,751)
         #images,labels,_ = input_fn()
         #dataset=make_slim_dataset(FLAGS.dataset_split_name, FLAGS.dataset_dir)
         #provider = slim.dataset_data_provider.DatasetDataProvider(dataset,shuffle=True)
@@ -188,15 +191,13 @@ def main(_):
             is_training=True
         )
 
-        labels = slim.one_hot_encoding(labels, 751)
         logits, end_points = network_fn(images)
         if 'AuxLogits' in end_points:
             tf.losses.softmax_cross_entropy(
                     logits=end_points['AuxLogits'], onehot_labels=labels,
                     label_smoothing=0, weights=0.4, scope='aux_loss')
         tf.losses.softmax_cross_entropy(
-                logits=logits, onehot_labels=labels,
-                label_smoothing=0, weights=1.0)
+                logits=logits, onehot_labels=labels)
         total_loss = tf.losses.get_total_loss()
         #optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
         optimizer = tf.train.MomentumOptimizer(0.001,0.9)
@@ -204,7 +205,7 @@ def main(_):
 
 
         variabels_to_restore = get_restore_variabels()
-        restore_saver = tf.train.Saver(variabels_to_restore,max_to_keep=4)
+        restore_saver = tf.train.Saver(variabels_to_restore)
         saver = tf.train.Saver()
         mean_loss = 0
         with tf.Session() as sess:
