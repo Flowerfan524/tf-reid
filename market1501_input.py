@@ -145,6 +145,7 @@ def get_cam_label(data_dir):
     labels = []
     cams = []
     label_dict = {}
+    value=0
     for filename in filenames:
         if filename.startswith('-'):
             label = -1
@@ -160,6 +161,8 @@ def get_cam_label(data_dir):
         cams += [cam]
     return labels,cams
 
+
+
 def img_input_fn(data_dir,is_training=False):
     filenames = [os.path.join(data_dir,filename) for filename in os.listdir(data_dir) if filename.endswith('.jpg')]
     labels, cams = get_cam_label(data_dir)
@@ -167,23 +170,23 @@ def img_input_fn(data_dir,is_training=False):
 
     # Use `tf.parse_single_example()` to extract data from a `tf.Example`
     # protocol buffer, and perform any additional per-record preprocessing.
-    def process_image(image):
+
+    def preprocess_image(image):
         if is_training:
             image = tf.image.resize_images(image,(256,256))
             image = tf.image.random_flip_left_right(image)
             image = tf.random_crop(image,(224,224,3))
         else:
             image = tf.image.resize_iamges(image,(224,224))
+        mean = tf.constant([105.606,99.0468,97.8286])
+        image -= mean
         return image
-
 
     def _read_img(filename,label,cam):
 
         image_string = tf.read_file(filename)
         image = tf.image.decode_jpeg(image_string)
-        image = process_image(image)
-        mean = tf.constant([105.606,99.0468,97.8286])
-        image -= mean
+        image = preprocess_image(image)
 
         return image,label,cam
 
@@ -192,7 +195,7 @@ def img_input_fn(data_dir,is_training=False):
         dataset = dataset.shuffle(buffer_size=10000)
         dataset = dataset.repeat()
     dataset = dataset.map(_read_img)
-#     dataset = dataset.batch(48)
+    dataset = dataset.batch(48)
     iterator = dataset.make_one_shot_iterator()
     imgs, labels, cams = iterator.get_next()
     return imgs, labels, cams

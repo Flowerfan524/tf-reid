@@ -14,6 +14,10 @@ tf.app.flags.DEFINE_string(
         'model_name', 'inception_v3',
         'The name of model'
         )
+tf.app.flags.DEFINE_string(
+        'check_step', '16000',
+        'The name of model'
+        )
 FLAGS = tf.app.flags.FLAGS
 
 feature_map = {
@@ -43,7 +47,8 @@ def extract_features(model_name,record_file,checkpoints):
         feature = tf.squeeze(feature)
         saver = tf.train.Saver()
         with tf.Session() as sess:
-            saver.restore(sess,tf.train.latest_checkpoint(checkpoints))
+            #saver.restore(sess,tf.train.latest_checkpoint(checkpoints))
+            saver.restore(sess,checkpoints)
             while True:
                 try:
                     np_feature,np_label,np_cam = sess.run([feature,labels,cams])
@@ -61,8 +66,9 @@ def extract_features(model_name,record_file,checkpoints):
 def main(_):
     split_name = FLAGS.split_name
     model_name=FLAGS.model_name
+    check_step = FLAGS.check_step
     record_file='/tmp/Market-1501/market-1501_%s.tfrecord'%split_name
-    checkpoints='/tmp/checkpoints/market-1501/%s'%model_name
+    checkpoints='/tmp/checkpoints/market-1501/%s/model.ckpt-%s'%(model_name,check_step)
     feature,label,cam = extract_features(model_name, record_file, checkpoints)
     np.savez('/tmp/Market-1501/feature/%s'%split_name,
             feature=feature,
