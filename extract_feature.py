@@ -1,5 +1,5 @@
 import tensorflow as tf
-from market1501_input import input_fn
+from market1501_input import * 
 from nets import nets_factory
 from preprocessing import preprocess_image
 import os
@@ -15,7 +15,7 @@ tf.app.flags.DEFINE_string(
         'The name of model'
         )
 tf.app.flags.DEFINE_string(
-        'check_step', '16000',
+        'check_step', '18000',
         'The name of model'
         )
 FLAGS = tf.app.flags.FLAGS
@@ -31,12 +31,13 @@ feature_map = {
                }
 
 
-def extract_features(model_name,record_file,checkpoints):
+def extract_features(model_name,data_dir,checkpoints):
     features = []
     classes = []
     cameras = []
     with tf.Graph().as_default():
-        images,labels,cams = input_fn(record_file)
+        images,labels,cams = img_input_fn(data_dir)
+        #images,labels,cams = input_fn(record_file)
         network_fn = nets_factory.get_network_fn(model_name,num_classes=751)
         #train_image_size = network_fn.default_image_size
         #saver = tf.train.import_meta_graph('%s/model.ckpt-38000.meta'%checkpoints)
@@ -67,7 +68,7 @@ def main(_):
     split_name = FLAGS.split_name
     model_name=FLAGS.model_name
     check_step = FLAGS.check_step
-    record_file='/tmp/Market-1501/market-1501_%s.tfrecord'%split_name
+    record_file='/tmp/Market-1501/%s'%split_name
     checkpoints='/tmp/checkpoints/market-1501/%s/model.ckpt-%s'%(model_name,check_step)
     feature,label,cam = extract_features(model_name, record_file, checkpoints)
     np.savez('/tmp/Market-1501/feature/%s'%split_name,

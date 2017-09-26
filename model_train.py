@@ -169,6 +169,7 @@ def main(_):
         # data set
         ############
         record_file = os.path.join(
+
             FLAGS.dataset_dir,'%s%s.tfrecord'%(FLAGS.dataset_name,FLAGS.dataset_split_name))
         train_dir = '/tmp/Market-1501/train'
         images, labels, _ = img_input_fn(train_dir,True)
@@ -203,8 +204,8 @@ def main(_):
         #optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
         global_step = tf.Variable(0,trainable=False)
         learning_rate = tf.train.polynomial_decay(0.001,global_step,decay_steps=16000)
-        #optimizer = tf.train.GradientDescentOptimizer(learning_rate)
-        optimizer = tf.train.MomentumOptimizer(learning_rate,0.9)
+        optimizer = tf.train.GradientDescentOptimizer(learning_rate)
+        #optimizer = tf.train.MomentumOptimizer(learning_rate,0.9)
         
         train_op = optimizer.minimize(total_loss,global_step=global_step)
 

@@ -177,7 +177,7 @@ def img_input_fn(data_dir,is_training=False):
             image = tf.image.random_flip_left_right(image)
             image = tf.random_crop(image,(224,224,3))
         else:
-            image = tf.image.resize_iamges(image,(224,224))
+            image = tf.image.resize_images(image,(224,224))
         mean = tf.constant([105.606,99.0468,97.8286])
         image -= mean
         return image
