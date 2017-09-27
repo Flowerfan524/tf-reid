@@ -92,11 +92,11 @@ def _get_init_fn():
 
     # Warn the user if a checkpoint exists in the train_dir. Then we'll be
     # ignoring the checkpoint anyway.
-    if tf.train.latest_checkpoint(FLAGS.train_dir):
-        tf.logging.info(
-        'Ignoring --checkpoint_path because a checkpoint already exists in %s'
-        % FLAGS.train_dir)
-        return None
+    # if tf.train.latest_checkpoint(FLAGS.train_dir):
+    #     tf.logging.info(
+    #     'Ignoring --checkpoint_path because a checkpoint already exists in %s'
+    #     % FLAGS.train_dir)
+    #     return None
 
     exclusions = []
     if FLAGS.checkpoint_exclude_scopes:
@@ -178,7 +178,7 @@ def main(_):
         image,label = provider.get(['image','label'])
         images = preprocess_images(images,True)
         labels = tf.contrib.layers.one_hot_encoding(labels,751)
-        images,labels = tf.train.batch([images,labels],batch_size=32,num_threads=5,name='batch')
+        images,labels = tf.train.batch([images,labels],batch_size=32,num_threads=5,capacity=*5,name='batch')
 
         ################
         # select network
@@ -197,36 +197,28 @@ def main(_):
                     label_smoothing=0, weights=0.4, scope='aux_loss')
         tf.losses.softmax_cross_entropy(
                 logits=logits, onehot_labels=labels)
+
+        total_loss = tf.losses.get_total_loss()
         learning_rate = tf.train.polynomial_decay(0.001,global_step,decay_steps=16000)
         optimizer = tf.train.GradientDescentOptimizer(learning_rate)
         #optimizer = tf.train.MomentumOptimizer(learning_rate,0.9)
-        
-        train_op = optimizer.minimize(total_loss,global_step=global_step)
+
+        train_op = slim.learning.create_train_op(total_loss, optimizer)
 
 
         variabels_to_restore = get_restore_variabels()
         restore_saver = tf.train.Saver(variabels_to_restore)
         saver = tf.train.Saver()
         mean_loss = 0
-        with tf.Session() as sess:
-            #initialize_uninitialized_vars(sess)
-            init_op = tf.global_variables_initializer()
-            sess.run(init_op)
-            restore_saver.restore(sess,FLAGS.checkpoint_path)
-            start_time = time.time()
-            for step in range(FLAGS.max_number_of_steps):
-                try:
-                    _,loss = sess.run([train_op,total_loss])
-                    mean_loss += loss
-                    if (step+1) % 20 == 0:
-                        left_seconds = (time.time()-start_time)/step * (FLAGS.max_number_of_steps - step)
-                        tf.logging.info('step: {}, loss: {:.5f},time left: {}\n'.format(step+1,mean_loss/20,time.strftime('%H:%M:%S',time.gmtime(left_seconds))))
-                        mean_loss = 0
-                    if (step+1) % 2000 == 0:
-                        saver.save(sess,'%s/model.ckpt'%FLAGS.train_dir,global_step=step+1)
-                except tf.errors.OutOfRangeError:
-                    break
-            
+        slim.learning.train(
+            train_op,
+            logdir=FLAGS.train_dir,
+            init_fn=_get_init_fn(),
+            number_of_steps=FLAGS.max_number_of_steps,
+            log_every_n_steps=20,
+            save_summaries_secs=600
+        )
+
 
 if __name__ == '__main__':
     tf.app.run()
