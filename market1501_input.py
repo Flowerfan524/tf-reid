@@ -140,7 +140,7 @@ def input_fn(filename,is_training=False):
     imgs, labels, cams = iterator.get_next()
     return imgs, labels, cams
 
-def get_cam_label(data_dir):
+def get_cam_label(data_dir,is_training):
     filenames = [filename for filename in os.listdir(data_dir) if filename.endswith('.jpg')]
     labels = []
     cams = []
@@ -152,10 +152,11 @@ def get_cam_label(data_dir):
             cam = int(filename[4])
         else:
             label = int(x=filename[:4])
-            if label not in label_dict:
-                label_dict[label] = value
-                value += 1
-            label = label_dict[label]
+            if is_training:
+                if label not in label_dict:
+                    label_dict[label] = value
+                    value += 1
+                label = label_dict[label]
             cam = int(x=filename[6])
         labels += [label]
         cams += [cam]
@@ -165,7 +166,7 @@ def get_cam_label(data_dir):
 
 def img_input_fn(data_dir,is_training=False):
     filenames = [os.path.join(data_dir,filename) for filename in os.listdir(data_dir) if filename.endswith('.jpg')]
-    labels, cams = get_cam_label(data_dir)
+    labels, cams = get_cam_label(data_dir,is_training)
     dataset = tf.contrib.data.Dataset.from_tensor_slices((tf.constant(filenames),tf.constant(labels),tf.constant(cams)))
 
     # Use `tf.parse_single_example()` to extract data from a `tf.Example`
