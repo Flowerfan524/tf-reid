@@ -37,7 +37,7 @@ def extract_features(model_name,data_dir,checkpoints):
     cameras = []
     with tf.Graph().as_default():
         images,labels,cams = img_input_fn(data_dir)
-        #images,labels,cams = input_fn(record_file)
+        #images,labels,cams = input_fn(data_dir)
         network_fn = nets_factory.get_network_fn(model_name,num_classes=751)
         #train_image_size = network_fn.default_image_size
         #saver = tf.train.import_meta_graph('%s/model.ckpt-38000.meta'%checkpoints)
@@ -69,6 +69,7 @@ def main(_):
     model_name=FLAGS.model_name
     check_step = FLAGS.check_step
     record_file='/tmp/Market-1501/%s'%split_name
+    #record_file='/tmp/Market-1501/market-1501_%s.tfrecord'%split_name
     checkpoints='/tmp/checkpoints/market-1501/%s/model.ckpt-%s'%(model_name,check_step)
     feature,label,cam = extract_features(model_name, record_file, checkpoints)
     np.savez('/tmp/Market-1501/feature/%s'%split_name,
