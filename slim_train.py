@@ -1,6 +1,7 @@
 import tensorflow as tf
 from market1501_input import *
 from nets import nets_factory
+from preprocessing import *
 import time
 import os
 
@@ -171,14 +172,13 @@ def main(_):
 
             FLAGS.dataset_dir,'%s%s.tfrecord'%(FLAGS.dataset_name,FLAGS.dataset_split_name))
         train_dir = '/tmp/Market-1501/train'
-        images, labels, _ = img_input_fn(train_dir,True)
         # images,labels,_ = input_fn(record_file,True)
         dataset=make_slim_dataset(FLAGS.dataset_split_name, FLAGS.dataset_dir)
         provider = slim.dataset_data_provider.DatasetDataProvider(dataset,shuffle=True)
         image,label = provider.get(['image','label'])
-        images = preprocess_images(images,True)
-        labels = tf.contrib.layers.one_hot_encoding(labels,751)
-        images,labels = tf.train.batch([images,labels],batch_size=32,num_threads=5,capacity=*5,name='batch')
+        images = preprocess_image(image,224,True)
+        labels = tf.contrib.layers.one_hot_encoding(label,751)
+        images,labels = tf.train.batch([images,labels],batch_size=32,num_threads=5,capacity=32*5,name='batch')
 
         ################
         # select network
@@ -198,6 +198,7 @@ def main(_):
         tf.losses.softmax_cross_entropy(
                 logits=logits, onehot_labels=labels)
 
+        global_step = tf.Variable(0,trainable=False)
         total_loss = tf.losses.get_total_loss()
         learning_rate = tf.train.polynomial_decay(0.001,global_step,decay_steps=16000)
         optimizer = tf.train.GradientDescentOptimizer(learning_rate)

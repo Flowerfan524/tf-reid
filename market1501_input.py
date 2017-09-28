@@ -1,6 +1,6 @@
 import tensorflow as tf
 from PIL import Image
-from preprocessing import *
+#from preprocessing import *
 import os
 slim = tf.contrib.slim
 
