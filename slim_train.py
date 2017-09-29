@@ -2,8 +2,8 @@ import tensorflow as tf
 from market1501_input import *
 from nets import nets_factory
 from preprocessing import *
-import time
 import os
+import feature_util
 
 
 slim = tf.contrib.slim
@@ -62,6 +62,11 @@ tf.app.flags.DEFINE_string(
 tf.app.flags.DEFINE_string(
     'checkpoint_exclude_scopes', 'InceptionV3/Logits,InceptionV3/AuxLogits',
     'The path to a checkpoint from which to fine-tune.')
+
+tf.app.flags.DEFINE_string(
+    'trainable_scopes', None,
+    'Comma-separated list of scopes to filter the set of variables to train.'
+    'By default, None would train all the variables.')
 
 
 
@@ -125,6 +130,23 @@ def _get_init_fn():
             checkpoint_path,
             variables_to_restore)
 
+def _get_variables_to_train():
+  """Returns a list of variables to train.
+
+  Returns:
+    A list of variables to train by the optimizer.
+  """
+  if FLAGS.trainable_scopes is None:
+    return tf.trainable_variables()
+  else:
+    scopes = [scope.strip() for scope in FLAGS.trainable_scopes.split(',')]
+
+  variables_to_train = []
+  for scope in scopes:
+    variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope)
+    variables_to_train.extend(variables)
+  return variables_to_train
+
 
 
 def get_restore_variabels():
@@ -168,10 +190,6 @@ def main(_):
         #############
         # data set
         ############
-        record_file = os.path.join(
-
-            FLAGS.dataset_dir,'%s%s.tfrecord'%(FLAGS.dataset_name,FLAGS.dataset_split_name))
-        train_dir = '/tmp/Market-1501/train'
         # images,labels,_ = input_fn(record_file,True)
         dataset=make_slim_dataset(FLAGS.dataset_split_name, FLAGS.dataset_dir)
         provider = slim.dataset_data_provider.DatasetDataProvider(dataset,shuffle=True)
@@ -190,7 +208,17 @@ def main(_):
             is_training=True
         )
 
+
+
+
         logits, end_points = network_fn(images)
+
+        feature_name = feature_util.get_last_feature_name(model_name=model_name)
+        feature = tf.get_default_graph().get_tensor_by_name(feature_name)
+        feature = tf.squeeze(feature,name='squeeze_layer')
+        feature = tf.layers.dropout(feature,rate=0.3,training=True,name='drop_feature')
+        logits = tf.layers.conv2d(feature,751,[1,1],activation=None,
+                                normalizer_fn=None,name='logits')
         if 'AuxLogits' in end_points:
             tf.losses.softmax_cross_entropy(
                     logits=end_points['AuxLogits'], onehot_labels=labels,
@@ -204,13 +232,10 @@ def main(_):
         optimizer = tf.train.GradientDescentOptimizer(learning_rate)
         #optimizer = tf.train.MomentumOptimizer(learning_rate,0.9)
 
-        train_op = slim.learning.create_train_op(total_loss, optimizer)
 
+        variables_to_train = _get_variables_to_train()
+        train_op = slim.learning.create_train_op(total_loss, optimizer,variables_to_train=variables_to_train)
 
-        variabels_to_restore = get_restore_variabels()
-        restore_saver = tf.train.Saver(variabels_to_restore)
-        saver = tf.train.Saver()
-        mean_loss = 0
         slim.learning.train(
             train_op,
             logdir=FLAGS.train_dir,
