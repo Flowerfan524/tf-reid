@@ -1,6 +1,6 @@
 import tensorflow as tf
 from PIL import Image
-#from preprocessing import *
+from preprocessing import *
 import os
 slim = tf.contrib.slim
 
@@ -15,7 +15,8 @@ _ITEMS_TO_DESCRIPTIONS = {
     'label': 'A single integer between 0 and 9',
 }
 
-label_dict={}
+LABEL_DICT={}
+value=0
 
 
 
@@ -48,7 +49,6 @@ def bytes_feature(values):
 
 def _conver_to_records(data_dir,tfrecord_writer):
 
-    value = 0
     filenames = os.listdir(data_dir)
     for filename in filenames:
         if not filename.endswith('.jpg'): continue
@@ -61,10 +61,10 @@ def _conver_to_records(data_dir,tfrecord_writer):
             cam = int(filename[4])
         else:
             label = int(x=filename[:4])
-            if label not in label_dict:
-                label_dict[label] = value
+            if label not in LABEL_DICT:
+                LABEL_DICT[label] = value
                 value += 1
-            label = label_dict[label]
+            label = LABEL_DICT[label]
             cam = int(x=filename[6])
 
 
@@ -134,7 +134,7 @@ def input_fn(filename,is_training=False):
         dataset = dataset.shuffle(buffer_size=10000)
         dataset = dataset.repeat()
     dataset = dataset.map(parser)
-    dataset = dataset.batch(48)
+    dataset = dataset.batch(32)
     iterator = dataset.make_one_shot_iterator()
 
     imgs, labels, cams = iterator.get_next()
@@ -172,7 +172,7 @@ def img_input_fn(data_dir,is_training=False):
     # Use `tf.parse_single_example()` to extract data from a `tf.Example`
     # protocol buffer, and perform any additional per-record preprocessing.
 
-    def preprocess_image(image):
+    def process_image(image):
         if is_training:
             image = tf.image.resize_images(image,(256,256))
             image = tf.image.random_flip_left_right(image)
@@ -187,7 +187,8 @@ def img_input_fn(data_dir,is_training=False):
 
         image_string = tf.read_file(filename)
         image = tf.image.decode_jpeg(image_string)
-        image = preprocess_image(image)
+        #image = process_image(image)
+        image = preprocess_image(image,224,is_training)
 
         return image,label,cam
 
@@ -196,7 +197,7 @@ def img_input_fn(data_dir,is_training=False):
         dataset = dataset.shuffle(buffer_size=10000)
         dataset = dataset.repeat()
     dataset = dataset.map(_read_img)
-    dataset = dataset.batch(48)
+    dataset = dataset.batch(32)
     iterator = dataset.make_one_shot_iterator()
     imgs, labels, cams = iterator.get_next()
     return imgs, labels, cams

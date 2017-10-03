@@ -209,25 +209,17 @@ def main(_):
         )
 
 
+        network_fn(images)
 
-
-        logits, end_points = network_fn(images)
-
-        feature_name = feature_util.get_last_feature_name(model_name=model_name)
+        feature_name = feature_util.get_last_feature_name(model_name=FLAGS.model_name)
         feature = tf.get_default_graph().get_tensor_by_name(feature_name)
-        feature = tf.squeeze(feature,name='squeeze_layer')
         feature = tf.layers.dropout(feature,rate=0.3,training=True,name='drop_feature')
-        logits = tf.layers.conv2d(feature,751,[1,1],activation=None,
-                                normalizer_fn=None,name='logits')
-        if 'AuxLogits' in end_points:
-            tf.losses.softmax_cross_entropy(
-                    logits=end_points['AuxLogits'], onehot_labels=labels,
-                    label_smoothing=0, weights=0.4, scope='aux_loss')
-        tf.losses.softmax_cross_entropy(
+        logits = tf.layers.conv2d(feature,751,[1,1],activation=None,name='logits')
+        logits = tf.squeeze(logits,name='squeeze_class')
+        total_loss = tf.losses.softmax_cross_entropy(
                 logits=logits, onehot_labels=labels)
 
         global_step = tf.Variable(0,trainable=False)
-        total_loss = tf.losses.get_total_loss()
         learning_rate = tf.train.polynomial_decay(0.001,global_step,decay_steps=16000)
         optimizer = tf.train.GradientDescentOptimizer(learning_rate)
         #optimizer = tf.train.MomentumOptimizer(learning_rate,0.9)

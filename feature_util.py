@@ -5,7 +5,7 @@ FEATURE_MAP = {
                 'inception_v4': 'PreLogitsFlatten',
                 'inception_resnet_v2': 'PreLogitsFlatten',
                 'resnet_v1_50': 'resnet_v1_50/pool5:0',
-                'resnet_v2_50': 'pool5_end_points',
+                'resnet_v2_50': 'resnet_v2_50/pool5:0',
                 'mobilenet_v1': 'AvgPool_1a',
                }
 

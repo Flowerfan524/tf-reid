@@ -33,7 +33,6 @@ def extract_features(model_name,data_dir,checkpoints):
         #train_image_size = network_fn.default_image_size
         #saver = tf.train.import_meta_graph('%s/model.ckpt-38000.meta'%checkpoints)
         logits,_ = network_fn(images)
-        if model_name not in feature_map: raise ValueError('model do not exist')
         feature_name = feature_util.get_last_feature_name(model_name=model_name)
         feature = tf.get_default_graph().get_tensor_by_name(feature_name)
         feature = tf.squeeze(feature)
